@@ -110,3 +110,42 @@ class Hidden(ClueType):
         # Validate that the hidden word produces the answer
         if normalize(self.hidden) != self.answer:
             raise ValueError(f'Hidden word "{self.hidden}" must produce answer "{self.answer}"')
+
+@dataclass(frozen=True)
+class Reversal(ClueType):
+    """
+    A reversal type clue. The answer is formed by reversing a word or phrase in the clue.
+
+    Attributes:
+        clue (str): The full text of the clue.
+        indicator (str): The part of the clue that indicates a reversal should be performed.
+        fodder (str): The word or phrase to be reversed.
+        answer (str): The answer to the clue.
+
+    >>> Reversal('Returned lager', 'Returned <fodder>', 'lager', 'REGAL')
+    Reversal(clue='Returned lager', indicator='Returned <fodder>', fodder='lager', answer='REGAL')
+    >>> Reversal('Returned lager', 'Returned <fodder>', 'lager', 'ALGAE')
+    Traceback (most recent call last):
+    ...
+    ValueError: Answer "ALGAE" must be a reversal of "lager"
+    """
+    clue: str
+    indicator: str
+    fodder: str
+    answer: str
+
+    def __post_init__(self):
+        # Validate that the indicator matches the clue and produces the fodder
+        check_indicator_matches(self.clue, self.indicator, {'fodder': self.fodder})
+       
+        # Validate that the answer is in the correct format
+        check_answer(self.answer)
+        
+        # Validate that the answer is a reversal of the fodder
+        if normalize(self.fodder)[::-1] != self.answer:
+            raise ValueError(f'Answer "{self.answer}" must be a reversal of "{self.fodder}"')
+        
+        # This is a simple check to ensure the answer is a valid word
+        # In a real system, you'd want to check against a dictionary
+        if len(self.answer) < 2:
+            raise ValueError(f'Answer "{self.answer}" must be a valid word')
