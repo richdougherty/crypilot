@@ -242,25 +242,30 @@ def answer_matches_pattern(answer: str, answer_pattern: str):
     # Match the clean answer against the pattern
     return bool(re.match(pattern, clean_answer, re.IGNORECASE))
 
-def indicator_clue(indicator: str, parts: dict[str, str]) -> bool:
+def indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> bool:
     """
-    Gets the clue for an indicator by substituting the parts.
+    Confirms whether an indicator string when applied to the given fodder
+    string produces the given results.
 
     Args:
+        clue (str): The original clue string.
         indicator (str): The indicator string with placeholders.
         parts (dict[str, str]): A dictionary of parts to replace in the indicator.
                                 A value of None for a part indicates it should be
                                 skipped.
 
     Returns:
-        str: The clue
+        bool: True if the indicator matches the clue after replacements, False otherwise.
 
     Raises:
         ValueError: If a bracketed key in the indicator is not found in the parts dictionary.
 
-    >>> indicator_clue('shredded <fodder>', { 'fodder': 'corset' })
-    'shredded corset'
-    >>> indicator_clue(
+    >>> indicator_matches('shredded corset', 'shredded <anagram>', { 'anagram': 'corset' })
+    True
+    >>> indicator_matches('shredded pickle', 'shredded <anagram>', { 'anagram': 'corset' })
+    False
+    >>> indicator_matches(
+    ...     'PAL outside of U',
     ...     '<left><right> outside of <middle>',
     ...     {
     ...         'left': 'P',
@@ -268,11 +273,11 @@ def indicator_clue(indicator: str, parts: dict[str, str]) -> bool:
     ...         'middle': 'U'
     ...     }
     ... )
-    'PAL outside of U'
-    >>> indicator_clue('mixed up <fodder>', { 'fodder': 'clues' })
-    'mixed up clues'
-    >>> indicator_clue('<fodder> shaken up', { 'fodder': 'word' })
-    'word shaken up'
+    True
+    >>> indicator_matches('mixed up clues', 'mixed up <anagram>', { 'anagram': 'clues' })
+    True
+    >>> indicator_matches('word shaken up', '<fodder> shaken up', { 'fodder': 'word' })
+    True
     """
     replaced_indicator = indicator
     for key, value in parts.items():
@@ -286,7 +291,7 @@ def indicator_clue(indicator: str, parts: dict[str, str]) -> bool:
         if bracketed_key not in replaced_indicator:
             raise ValueError(f"Bracketed key '{bracketed_key}' not found in indicator")
         replaced_indicator = replaced_indicator.replace(bracketed_key, value, 1)
-    return replaced_indicator
+    return equals_normalized(replaced_indicator, clue)
 
 def check_indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> None:
     """
