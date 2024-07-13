@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from clues import *
 from cryptic_strings import *
+from clue_text import *
     
 class SolutionType:
     """
@@ -46,6 +47,22 @@ class DoubleSolution(SolutionType):
     ...   answer = 'PAL'
     ... )
     DoubleSolution(clue='Lap dancing friend', answer_pattern='___', solution1=Anagram(clue='Lap dancing', indicator='<fodder> dancing', fodder='Lap', answer='PAL'), solution2=Definition(clue='friend', answer='PAL'), answer='PAL')
+
+    >>> DoubleSolution(
+    ...   clue = 'Returned beer fit for a king',
+    ...   answer_pattern = '_____',
+    ...   solution1 = Reversal(
+    ...       Combination(
+    ...           'Returned beer',
+    ...           'Returned ', Definition('beer', 'LAGER'), '',
+    ...           'Returned LAGER'
+    ...       ),
+    ...       'Returned <fodder>', 'LAGER', 'REGAL'
+    ...   ),
+    ...   solution2 = Definition('fit for a king', 'REGAL'),
+    ...   answer = 'REGAL'
+    ... )
+    DoubleSolution(clue='Returned beer fit for a king', answer_pattern='_____', solution1=Reversal(clue=Combination(input='Returned beer', prefix='Returned ', combined=Definition(clue='beer', answer='LAGER'), suffix='', output='Returned LAGER'), indicator='Returned <fodder>', fodder='LAGER', answer='REGAL'), solution2=Definition(clue='fit for a king', answer='REGAL'), answer='REGAL')
 
     >>> # Test for error when solutions don't match
     >>> DoubleSolution(
@@ -97,7 +114,7 @@ class DoubleSolution(SolutionType):
         check_answer(self.answer)
         
         # Check if the combined clues match the full clue
-        joined_clues = self.solution1.clue + ' ' + self.solution2.clue
+        joined_clues = clue_input(self.solution1.clue) + ' ' + clue_input(self.solution2.clue)
         if not equals_normalized(self.clue, joined_clues):
             raise ValueError(f'In a double solution, the clues for each solution should join to make the whole solution: "{self.clue}" != "{joined_clues}"')
         

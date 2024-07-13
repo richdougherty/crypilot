@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from cryptic_strings import *
+from clue_text import *
 
 class ClueType:
     """
@@ -27,14 +28,14 @@ class Anagram(ClueType):
     ...
     ValueError: Answer "ANSWER" must be an anagram of "clue"
     """
-    clue: str
+    clue: ClueText
     indicator: str
     fodder: str
     answer: str
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the fodder
-        check_indicator_matches(self.clue, self.indicator, {'fodder': self.fodder}) 
+        check_indicator_matches(clue_output(self.clue), self.indicator, {'fodder': self.fodder}) 
        
         # Validate that the answer is in the correct format
         check_answer(self.answer)
@@ -102,7 +103,7 @@ class Hidden(ClueType):
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the hidden word
-        check_indicator_matches(self.clue, self.indicator, {'left': self.left, 'hidden': self.hidden, 'right': self.right})
+        check_indicator_matches(clue_output(self.clue), self.indicator, {'left': self.left, 'hidden': self.hidden, 'right': self.right})
 
         # Validate that the answer is in the correct format
         check_answer(self.answer)
@@ -124,6 +125,10 @@ class Reversal(ClueType):
 
     >>> Reversal('Returned lager', 'Returned <fodder>', 'lager', 'REGAL')
     Reversal(clue='Returned lager', indicator='Returned <fodder>', fodder='lager', answer='REGAL')
+    >>> Reversal(
+    ...     Combination('Returned beer', 'Returned ', Definition('beer', 'LAGER'), '', 'Returned LAGER'),
+    ...     'Returned <fodder>', 'LAGER', 'REGAL')
+    Reversal(clue=Combination(input='Returned beer', prefix='Returned ', combined=Definition(clue='beer', answer='LAGER'), suffix='', output='Returned LAGER'), indicator='Returned <fodder>', fodder='LAGER', answer='REGAL')
     >>> Reversal('Returned lager', 'Returned <fodder>', 'lager', 'ALGAE')
     Traceback (most recent call last):
     ...
@@ -136,7 +141,7 @@ class Reversal(ClueType):
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the fodder
-        check_indicator_matches(self.clue, self.indicator, {'fodder': self.fodder})
+        check_indicator_matches(clue_output(self.clue), self.indicator, {'fodder': self.fodder})
        
         # Validate that the answer is in the correct format
         check_answer(self.answer)
