@@ -9,34 +9,6 @@ class ClueType:
     pass
 
 @dataclass(frozen=True)
-class Definition(ClueType):
-    """
-    A definition type clue. This is the simplest form of clue where the clue
-    directly defines the answer.
-
-    Attributes:
-        clue (str): The definition part of the clue.
-        answer (str): The answer to the clue.
-
-    >>> Definition('Chaperone', 'ESCORT')
-    Definition(clue='Chaperone', answer='ESCORT')
-    >>> Definition('Chaperone', 'escort')
-    Traceback (most recent call last):
-    ...
-    ValueError: "escort" must be in "answer" form: only uppercase, spaces and hyphens
-    >>> Definition('Quick movement', 'DART')
-    Definition(clue='Quick movement', answer='DART')
-    >>> Definition('Celestial body', 'STAR')
-    Definition(clue='Celestial body', answer='STAR')
-    """
-    clue: str
-    answer: str
-
-    def __post_init__(self):
-        # Validate that the answer is in the correct format
-        check_answer(self.answer)
-
-@dataclass(frozen=True)
 class Anagram(ClueType):
     """
     An anagram type clue. The clue contains a word or phrase that can be
@@ -70,6 +42,34 @@ class Anagram(ClueType):
         # Validate that the answer is an anagram of the fodder
         if sorted(normalize(self.fodder)) != sorted(self.answer):
             raise ValueError(f'Answer "{self.answer}" must be an anagram of "{self.fodder}"')
+
+@dataclass(frozen=True)
+class Definition(ClueType):
+    """
+    A definition type clue. This is the simplest form of clue where the clue
+    directly defines the answer.
+
+    Attributes:
+        clue (str): The definition part of the clue.
+        answer (str): The answer to the clue.
+
+    >>> Definition('Chaperone', 'ESCORT')
+    Definition(clue='Chaperone', answer='ESCORT')
+    >>> Definition('Chaperone', 'escort')
+    Traceback (most recent call last):
+    ...
+    ValueError: "escort" must be in "answer" form: only uppercase, spaces and hyphens
+    >>> Definition('Quick movement', 'DART')
+    Definition(clue='Quick movement', answer='DART')
+    >>> Definition('Celestial body', 'STAR')
+    Definition(clue='Celestial body', answer='STAR')
+    """
+    clue: str
+    answer: str
+
+    def __post_init__(self):
+        # Validate that the answer is in the correct format
+        check_answer(self.answer)
 
 @dataclass(frozen=True)
 class Hidden(ClueType):
