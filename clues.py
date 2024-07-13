@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from cryptic_strings import *
 
 class ClueType:
@@ -15,27 +15,26 @@ class Anagram(ClueType):
     rearranged to form the answer.
 
     Attributes:
-        clue (str): The full text of the clue.
         indicator (str): The part of the clue that indicates an anagram should be performed.
         fodder (str): The word or phrase to be anagrammed.
         answer (str): The answer to the clue.
+        clue (str): The full text of the clue, derived from indicator and fodder.
 
-    >>> Anagram('shredded corset', 'shredded <fodder>', 'corset', 'ESCORT')
-    Anagram(clue='shredded corset', indicator='shredded <fodder>', fodder='corset', answer='ESCORT')
-    >>> Anagram('Mixed up clue', 'Mixed up <fodder>', 'clue', 'ANSWER')
+    >>> Anagram('shredded <fodder>', 'corset', 'ESCORT')
+    Anagram(indicator='shredded <fodder>', fodder='corset', answer='ESCORT', clue='shredded corset')
+    >>> Anagram('Mixed up <fodder>', 'clue', 'ANSWER')
     Traceback (most recent call last):
     ...
     ValueError: Answer "ANSWER" must be an anagram of "clue"
     """
-    clue: str
     indicator: str
     fodder: str
     answer: str
+    clue: str = field(init=False)
 
     def __post_init__(self):
-        # Validate that the indicator matches the clue and produces the fodder
-        check_indicator_matches(self.clue, self.indicator, {'fodder': self.fodder}) 
-       
+        object.__setattr__(self, 'clue', indicator_clue(self.indicator, {'fodder': self.fodder}))
+        
         # Validate that the answer is in the correct format
         check_answer(self.answer)
         
@@ -77,32 +76,31 @@ class Hidden(ClueType):
     A hidden word type clue. The answer is hidden within the clue text.
 
     Attributes:
-        clue (str): The full text of the clue.
         indicator (str): The part of the clue that indicates a hidden word.
         left (str): The text before the hidden word.
         hidden (str): The hidden word (the answer).
         right (str): The text after the hidden word.
         answer (str): The answer to the clue.
+        clue (str): The full text of the clue, derived from indicator, left, hidden, and right.
 
-    >>> Hidden('Found ermine, deer hides', '<left><hidden><right> hides', 'Found ', 'ermine, d', 'eer', 'ERMINED')
-    Hidden(clue='Found ermine, deer hides', indicator='<left><hidden><right> hides', left='Found ', hidden='ermine, d', right='eer', answer='ERMINED')
-    >>> Hidden('Introduction to do-gooder', 'Introduction to <hidden><right>', None, 'do-g', 'ooder', 'DOG')
-    Hidden(clue='Introduction to do-gooder', indicator='Introduction to <hidden><right>', left=None, hidden='do-g', right='ooder', answer='DOG')
-    >>> Hidden('Incorrect hidden clue', '<left><hidden><right> hides', 'Inc', 'orrect', ' hidden clue', 'WRONG')
+    >>> Hidden('<left><hidden><right> hides', 'Found ', 'ermine, d', 'eer', 'ERMINED')
+    Hidden(indicator='<left><hidden><right> hides', left='Found ', hidden='ermine, d', right='eer', answer='ERMINED', clue='Found ermine, deer hides')
+    >>> Hidden('Introduction to <hidden><right>', None, 'do-g', 'ooder', 'DOG')
+    Hidden(indicator='Introduction to <hidden><right>', left=None, hidden='do-g', right='ooder', answer='DOG', clue='Introduction to do-gooder')
+    >>> Hidden('<left><hidden><right> hides', 'Inc', 'orrect', ' hidden clue', 'WRONG')
     Traceback (most recent call last):
     ...
-    ValueError: Indicator must match: clue: "Incorrect hidden clue", indicator: "<left><hidden><right> hides", parts: "{'left': 'Inc', 'hidden': 'orrect', 'right': ' hidden clue'}", indicator replaced with parts: "Incorrect hidden clue hides"
+    ValueError: Hidden word "orrect" must produce answer "WRONG"
     """
-    clue: str
     indicator: str
     left: str
     hidden: str
     right: str
     answer: str
+    clue: str = field(init=False)
 
     def __post_init__(self):
-        # Validate that the indicator matches the clue and produces the hidden word
-        check_indicator_matches(self.clue, self.indicator, {'left': self.left, 'hidden': self.hidden, 'right': self.right})
+        object.__setattr__(self, 'clue', indicator_clue(self.indicator, {'left': self.left, 'hidden': self.hidden, 'right': self.right}))
 
         # Validate that the answer is in the correct format
         check_answer(self.answer)
@@ -117,26 +115,25 @@ class Reversal(ClueType):
     A reversal type clue. The answer is formed by reversing a word or phrase in the clue.
 
     Attributes:
-        clue (str): The full text of the clue.
         indicator (str): The part of the clue that indicates a reversal should be performed.
         fodder (str): The word or phrase to be reversed.
         answer (str): The answer to the clue.
+        clue (str): The full text of the clue, derived from indicator and fodder.
 
-    >>> Reversal('Returned lager', 'Returned <fodder>', 'lager', 'REGAL')
-    Reversal(clue='Returned lager', indicator='Returned <fodder>', fodder='lager', answer='REGAL')
-    >>> Reversal('Returned lager', 'Returned <fodder>', 'lager', 'ALGAE')
+    >>> Reversal('Returned <fodder>', 'lager', 'REGAL')
+    Reversal(indicator='Returned <fodder>', fodder='lager', answer='REGAL', clue='Returned lager')
+    >>> Reversal('Returned <fodder>', 'lager', 'ALGAE')
     Traceback (most recent call last):
     ...
     ValueError: Answer "ALGAE" must be a reversal of "lager"
     """
-    clue: str
     indicator: str
     fodder: str
     answer: str
+    clue: str = field(init=False)
 
     def __post_init__(self):
-        # Validate that the indicator matches the clue and produces the fodder
-        check_indicator_matches(self.clue, self.indicator, {'fodder': self.fodder})
+        object.__setattr__(self, 'clue', indicator_clue(self.indicator, {'fodder': self.fodder}))
        
         # Validate that the answer is in the correct format
         check_answer(self.answer)
