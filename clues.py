@@ -45,31 +45,31 @@ class Anagram(ClueType):
     Attributes:
         clue (str): The full text of the clue.
         indicator (str): The part of the clue that indicates an anagram should be performed.
-        target (str): The word or phrase to be anagrammed.
+        fodder (str): The word or phrase to be anagrammed.
         answer (str): The answer to the clue.
 
-    >>> Anagram('shredded corset', 'shredded <target>', 'corset', 'ESCORT')
-    Anagram(clue='shredded corset', indicator='shredded <target>', target='corset', answer='ESCORT')
-    >>> Anagram('Mixed up clue', 'Mixed up <target>', 'clue', 'ANSWER')
+    >>> Anagram('shredded corset', 'shredded <fodder>', 'corset', 'ESCORT')
+    Anagram(clue='shredded corset', indicator='shredded <fodder>', fodder='corset', answer='ESCORT')
+    >>> Anagram('Mixed up clue', 'Mixed up <fodder>', 'clue', 'ANSWER')
     Traceback (most recent call last):
     ...
     ValueError: Answer "ANSWER" must be an anagram of "clue"
     """
     clue: str
     indicator: str
-    target: str
+    fodder: str
     answer: str
 
     def __post_init__(self):
-        # Validate that the indicator matches the clue and produces the target
-        check_indicator_matches(self.clue, self.indicator, {'target': self.target}) 
+        # Validate that the indicator matches the clue and produces the fodder
+        check_indicator_matches(self.clue, self.indicator, {'fodder': self.fodder}) 
        
         # Validate that the answer is in the correct format
         check_answer(self.answer)
         
-        # Validate that the answer is an anagram of the target
-        if sorted(normalize(self.target)) != sorted(self.answer):
-            raise ValueError(f'Answer "{self.answer}" must be an anagram of "{self.target}"')
+        # Validate that the answer is an anagram of the fodder
+        if sorted(normalize(self.fodder)) != sorted(self.answer):
+            raise ValueError(f'Answer "{self.answer}" must be an anagram of "{self.fodder}"')
 
 @dataclass(frozen=True)
 class Hidden(ClueType):

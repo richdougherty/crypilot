@@ -41,11 +41,11 @@ class DoubleSolution(SolutionType):
     >>> DoubleSolution(
     ...   clue = 'Lap dancing friend',
     ...   answer_pattern = '___',
-    ...   solution1 = Anagram('Lap dancing', '<target> dancing', 'Lap', 'PAL'),
+    ...   solution1 = Anagram('Lap dancing', '<fodder> dancing', 'Lap', 'PAL'),
     ...   solution2 = Definition('friend', 'PAL'),
     ...   answer = 'PAL'
     ... )
-    DoubleSolution(clue='Lap dancing friend', answer_pattern='___', solution1=Anagram(clue='Lap dancing', indicator='<target> dancing', target='Lap', answer='PAL'), solution2=Definition(clue='friend', answer='PAL'), answer='PAL')
+    DoubleSolution(clue='Lap dancing friend', answer_pattern='___', solution1=Anagram(clue='Lap dancing', indicator='<fodder> dancing', fodder='Lap', answer='PAL'), solution2=Definition(clue='friend', answer='PAL'), answer='PAL')
 
     >>> # Test for error when solutions don't match
     >>> DoubleSolution(

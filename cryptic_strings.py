@@ -244,7 +244,7 @@ def answer_matches_pattern(answer: str, answer_pattern: str):
 
 def indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> bool:
     """
-    Confirms whether an indicator string when applied to the given target
+    Confirms whether an indicator string when applied to the given fodder
     string produces the given results.
 
     Args:
@@ -276,7 +276,7 @@ def indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> bool:
     True
     >>> indicator_matches('mixed up clues', 'mixed up <anagram>', { 'anagram': 'clues' })
     True
-    >>> indicator_matches('word shaken up', '<target> shaken up', { 'target': 'word' })
+    >>> indicator_matches('word shaken up', '<fodder> shaken up', { 'fodder': 'word' })
     True
     """
     replaced_indicator = indicator
@@ -315,7 +315,7 @@ def check_indicator_matches(clue: str, indicator: str, parts: dict[str, str]) ->
     ...
     ValueError: Indicator must match: clue: "shredded pickle", indicator: "shredded <anagram>", parts: "{'anagram': 'corset'}", indicator replaced with parts: "shredded corset"
     >>> check_indicator_matches('PAL outside of U', '<left><right> outside of <middle>', {'left': 'P', 'right': 'AL', 'middle': 'U'})
-    >>> check_indicator_matches('word shaken up', '<target> shaken up', { 'target': 'word' })
+    >>> check_indicator_matches('word shaken up', '<fodder> shaken up', { 'fodder': 'word' })
     """
     replaced_indicator = indicator
     for key, value in parts.items():
