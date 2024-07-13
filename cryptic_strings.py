@@ -251,6 +251,8 @@ def indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> bool:
         clue (str): The original clue string.
         indicator (str): The indicator string with placeholders.
         parts (dict[str, str]): A dictionary of parts to replace in the indicator.
+                                A value of None for a part indicates it should be
+                                skipped.
 
     Returns:
         bool: True if the indicator matches the clue after replacements, False otherwise.
@@ -279,8 +281,55 @@ def indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> bool:
     """
     replaced_indicator = indicator
     for key, value in parts.items():
+        if value is None:
+            # A value of None indicates that the <key> is not present
+            # This can be used to have variations on common patterns, but
+            # exclude some parts for them. E.g. a hidden clue with no
+            # <left>, only a <hidden> and <right>.
+            continue
         bracketed_key = f'<{key}>'
         if bracketed_key not in replaced_indicator:
             raise ValueError(f"Bracketed key '{bracketed_key}' not found in indicator")
         replaced_indicator = replaced_indicator.replace(bracketed_key, value, 1)
     return equals_normalized(replaced_indicator, clue)
+
+def check_indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> None:
+    """
+    Checks if an indicator string when applied to the given parts
+    produces the given clue. Raises a ValueError with diagnostic information if not.
+
+    Args:
+        clue (str): The original clue string.
+        indicator (str): The indicator string with placeholders.
+        parts (dict[str, str]): A dictionary of parts to replace in the indicator.
+                                A value of None for a part indicates it should be
+                                skipped.
+
+    Raises:
+        ValueError: If the indicator doesn't match the clue after replacements,
+                    with detailed diagnostic information.
+
+    >>> check_indicator_matches('shredded corset', 'shredded <anagram>', { 'anagram': 'corset' })
+    >>> check_indicator_matches('shredded pickle', 'shredded <anagram>', { 'anagram': 'corset' })
+    Traceback (most recent call last):
+    ...
+    ValueError: Indicator must match: clue: "shredded pickle", indicator: "shredded <anagram>", parts: "{'anagram': 'corset'}", indicator replaced with parts: "shredded corset"
+    >>> check_indicator_matches('PAL outside of U', '<left><right> outside of <middle>', {'left': 'P', 'right': 'AL', 'middle': 'U'})
+    >>> check_indicator_matches('word shaken up', '<target> shaken up', { 'target': 'word' })
+    """
+    replaced_indicator = indicator
+    for key, value in parts.items():
+        if value is None:
+            # A value of None indicates that the <key> is not present
+            # This can be used to have variations on common patterns, but
+            # exclude some parts for them. E.g. a hidden clue with no
+            # <left>, only a <hidden> and <right>.
+            continue
+        bracketed_key = f'<{key}>'
+        if bracketed_key not in replaced_indicator:
+            raise ValueError(f"Bracketed key '{bracketed_key}' not found in indicator")
+        replaced_indicator = replaced_indicator.replace(bracketed_key, value, 1)
+    
+    if not equals_normalized(replaced_indicator, clue):
+        error_message = f'Indicator must match: clue: "{clue}", indicator: "{indicator}", parts: "{parts}", indicator replaced with parts: "{replaced_indicator}"'
+        raise ValueError(error_message)

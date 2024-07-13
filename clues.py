@@ -62,12 +62,51 @@ class Anagram(ClueType):
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the target
-        if not indicator_matches(self.clue, self.indicator, { 'target': self.target }):
-            raise ValueError(f'Anagram indicator "{self.indicator}" must match "{self.clue}" and produce "{self.target}"')
-        
+        check_indicator_matches(self.clue, self.indicator, {'target': self.target}) 
+       
         # Validate that the answer is in the correct format
         check_answer(self.answer)
         
         # Validate that the answer is an anagram of the target
         if sorted(normalize(self.target)) != sorted(self.answer):
             raise ValueError(f'Answer "{self.answer}" must be an anagram of "{self.target}"')
+
+@dataclass(frozen=True)
+class Hidden(ClueType):
+    """
+    A hidden word type clue. The answer is hidden within the clue text.
+
+    Attributes:
+        clue (str): The full text of the clue.
+        indicator (str): The part of the clue that indicates a hidden word.
+        left (str): The text before the hidden word.
+        hidden (str): The hidden word (the answer).
+        right (str): The text after the hidden word.
+        answer (str): The answer to the clue.
+
+    >>> Hidden('Found ermine, deer hides', '<left><hidden><right> hides', 'Found ', 'ermine, d', 'eer', 'ERMINED')
+    Hidden(clue='Found ermine, deer hides', indicator='<left><hidden><right> hides', left='Found ', hidden='ermine, d', right='eer', answer='ERMINED')
+    >>> Hidden('Introduction to do-gooder', 'Introduction to <hidden><right>', None, 'do-g', 'ooder', 'DOG')
+    Hidden(clue='Introduction to do-gooder', indicator='Introduction to <hidden><right>', left=None, hidden='do-g', right='ooder', answer='DOG')
+    >>> Hidden('Incorrect hidden clue', '<left><hidden><right> hides', 'Inc', 'orrect', ' hidden clue', 'WRONG')
+    Traceback (most recent call last):
+    ...
+    ValueError: Indicator must match: clue: "Incorrect hidden clue", indicator: "<left><hidden><right> hides", parts: "{'left': 'Inc', 'hidden': 'orrect', 'right': ' hidden clue'}", indicator replaced with parts: "Incorrect hidden clue hides"
+    """
+    clue: str
+    indicator: str
+    left: str
+    hidden: str
+    right: str
+    answer: str
+
+    def __post_init__(self):
+        # Validate that the indicator matches the clue and produces the hidden word
+        check_indicator_matches(self.clue, self.indicator, {'left': self.left, 'hidden': self.hidden, 'right': self.right})
+
+        # Validate that the answer is in the correct format
+        check_answer(self.answer)
+        
+        # Validate that the hidden word produces the answer
+        if normalize(self.hidden) != self.answer:
+            raise ValueError(f'Hidden word "{self.hidden}" must produce answer "{self.answer}"')
