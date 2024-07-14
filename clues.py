@@ -45,6 +45,59 @@ class Anagram(ClueType):
             raise ValueError(f'Answer "{self.answer}" must be an anagram of "{self.fodder}"')
 
 @dataclass(frozen=True)
+class Container(ClueType):
+    """
+    A container type clue. One set of letters is placed inside another.
+
+    Attributes:
+        clue (str): The full text of the clue.
+        indicator (str): The part of the clue that indicates a container should be formed.
+        outer_left (str): The left part of the word or phrase that forms the outer part of the container.
+        outer_right (str): The right part of the word or phrase that forms the outer part of the container.
+        inner (str): The word or phrase to be placed inside the outer parts.
+        answer (str): The answer to the clue.
+
+    >>> Container('PAL outside of U', '<outer_left><outer_right> outside of <inner>', 'PA', 'L', 'U', 'PAUL')
+    Container(clue='PAL outside of U', indicator='<outer_left><outer_right> outside of <inner>', outer_left='PA', outer_right='L', inner='U', answer='PAUL')
+    
+    >>> Container('O in VICE', '<inner> in <outer_left><outer_right>', 'VI', 'CE', 'O', 'VOICE')
+    Container(clue='O in VICE', indicator='<inner> in <outer_left><outer_right>', outer_left='VI', outer_right='CE', inner='O', answer='VOICE')
+    
+    >>> Container('CAMUS banks P', '<outer_left><outer_right> banks <inner>', 'CAM', 'US', 'P', 'CAMPUS')
+    Container(clue='CAMUS banks P', indicator='<outer_left><outer_right> banks <inner>', outer_left='CAM', outer_right='US', inner='P', answer='CAMPUS')
+    
+    >>> Container('Incorrect container', '<outer_left><outer_right> contains <inner>', 'OU', 'T', 'IN', 'WRONG')
+    Traceback (most recent call last):
+    ...
+    ValueError: Answer "WRONG" must be formed by putting "IN" between "OU" and "T"
+
+    >>> Container('R in GEMS', '<inner> in <outer_left><outer_right>', 'GE', 'MS', 'R', 'GERMS')
+    Container(clue='R in GEMS', indicator='<inner> in <outer_left><outer_right>', outer_left='GE', outer_right='MS', inner='R', answer='GERMS')
+    """
+    clue: str
+    indicator: str
+    outer_left: str
+    outer_right: str
+    inner: str
+    answer: str
+
+    def __post_init__(self):
+        # Validate that the indicator matches the clue and produces the container
+        check_indicator_matches(self.clue, self.indicator, {
+            'outer_left': self.outer_left,
+            'outer_right': self.outer_right,
+            'inner': self.inner
+        })
+       
+        # Validate that the answer is in the correct format
+        check_answer(self.answer)
+        
+        # Validate that the answer is formed by putting inner between outer_left and outer_right
+        expected_answer = normalize(self.outer_left + self.inner + self.outer_right)
+        if normalize(self.answer) != expected_answer:
+            raise ValueError(f'Answer "{self.answer}" must be formed by putting "{self.inner}" between "{self.outer_left}" and "{self.outer_right}"')
+
+@dataclass(frozen=True)
 class Definition(ClueType):
     """
     A definition type clue. This is the simplest form of clue where the clue
