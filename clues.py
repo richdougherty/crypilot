@@ -60,16 +60,16 @@ class Container(ClueType):
     >>> Container('PAL outside of U', '<outer_left><outer_right> outside of <inner>', 'PA', 'L', 'U', 'PAUL')
     Container(clue='PAL outside of U', indicator='<outer_left><outer_right> outside of <inner>', outer_left='PA', outer_right='L', inner='U', answer='PAUL')
     
-    >>> Container('O in VICE', '<inner> in <outer_left><outer_right>', 'VI', 'CE', 'O', 'VOICE')
-    Container(clue='O in VICE', indicator='<inner> in <outer_left><outer_right>', outer_left='VI', outer_right='CE', inner='O', answer='VOICE')
-    
+    >>> Container('O in VICE', '<inner> in <outer_left><outer_right>', 'V', 'ICE', 'O', 'VOICE')
+    Container(clue='O in VICE', indicator='<inner> in <outer_left><outer_right>', outer_left='V', outer_right='ICE', inner='O', answer='VOICE')
+   
     >>> Container('CAMUS banks P', '<outer_left><outer_right> banks <inner>', 'CAM', 'US', 'P', 'CAMPUS')
     Container(clue='CAMUS banks P', indicator='<outer_left><outer_right> banks <inner>', outer_left='CAM', outer_right='US', inner='P', answer='CAMPUS')
     
     >>> Container('Incorrect container', '<outer_left><outer_right> contains <inner>', 'OU', 'T', 'IN', 'WRONG')
     Traceback (most recent call last):
     ...
-    ValueError: Answer "WRONG" must be formed by putting "IN" between "OU" and "T"
+    ValueError: Indicator must match: clue: "Incorrect container", indicator: "<outer_left><outer_right> contains <inner>", parts: "{'outer_left': 'OU', 'outer_right': 'T', 'inner': 'IN'}", indicator replaced with parts: "OUT contains IN", got: "OUT contains IN"
 
     >>> Container('R in GEMS', '<inner> in <outer_left><outer_right>', 'GE', 'MS', 'R', 'GERMS')
     Container(clue='R in GEMS', indicator='<inner> in <outer_left><outer_right>', outer_left='GE', outer_right='MS', inner='R', answer='GERMS')
@@ -96,6 +96,109 @@ class Container(ClueType):
         expected_answer = normalize(self.outer_left + self.inner + self.outer_right)
         if normalize(self.answer) != expected_answer:
             raise ValueError(f'Answer "{self.answer}" must be formed by putting "{self.inner}" between "{self.outer_left}" and "{self.outer_right}"')
+
+from dataclasses import dataclass
+from typing import Union, Tuple, Optional
+from cryptic_strings import *
+from clue_text import *
+
+@dataclass(frozen=True)
+class Deletion(ClueType):
+    """
+    A deletion type clue. Letters are removed from a word or phrase to form the answer.
+
+    Attributes:
+        clue (str): The full text of the clue.
+        indicator (str): The part of the clue that indicates how the deletion should be performed.
+        keep (Union[str, Tuple[str, str]]): The part(s) of the fodder that are kept.
+        delete (Union[str, Tuple[str, str]]): The part(s) of the fodder that are deleted.
+        deletion (Optional[str]): The specific letter(s) being deleted, if mentioned in the clue.
+        answer (str): The answer to the clue.
+
+    >>> Deletion("Beheaded STAR", "Beheaded <delete><keep>", "TAR", "S", None, "TAR")
+    Deletion(clue='Beheaded STAR', indicator='Beheaded <delete><keep>', keep='TAR', delete='S', deletion=None, answer='TAR')
+
+    >>> Deletion("CRAVEN C to fly away", "<delete><keep> <deletion> to fly away", "RAVEN", "C", "C", "RAVEN")
+    Deletion(clue='CRAVEN C to fly away', indicator='<delete><keep> <deletion> to fly away', keep='RAVEN', delete='C', deletion='C', answer='RAVEN')
+
+    >>> Deletion('BOOK endlessly', "<keep><delete> endlessly", "BOO", "K", None, "BOO")
+    Deletion(clue='BOOK endlessly', indicator='<keep><delete> endlessly', keep='BOO', delete='K', deletion=None, answer='BOO')
+
+    >>> Deletion("DARLING heartlessly", "<keep1><delete><keep2> heartlessly", ("DAR", "ING"), "L", None, "DARING")
+    Deletion(clue='DARLING heartlessly', indicator='<keep1><delete><keep2> heartlessly', keep=('DAR', 'ING'), delete='L', deletion=None, answer='DARING')
+
+    >>> Deletion("Invalid STAR", "<keep><delete>", "TAR", "S", None, "TA")
+    Traceback (most recent call last):
+    ...
+    ValueError: Indicator must match: clue: "Invalid STAR", indicator: "<keep><delete>", parts: "{'keep': 'TAR', 'delete': 'S'}", indicator replaced with parts: "TARS", got: "TARS"
+
+    >>> Deletion("Mismatched CRAVEN", "<keep><delete> <deletion> away", "RAVEN", "C", "X", "RAVEN")
+    Traceback (most recent call last):
+    ...
+    ValueError: Indicator must match: clue: "Mismatched CRAVEN", indicator: "<keep><delete> <deletion> away", parts: "{'keep': 'RAVEN', 'delete': 'C', 'deletion': 'X'}", indicator replaced with parts: "RAVENC X away", got: "RAVENC X away"
+
+    >>> Deletion("Invalid keep type", "<keep><delete>", ["T", "A", "R"], "S", None, "TAR")
+    Traceback (most recent call last):
+    ...
+    ValueError: 'keep' must be a string or a tuple of two strings
+    """
+    clue: str
+    indicator: str
+    keep: Union[str, Tuple[str, str]]
+    delete: Union[str, Tuple[str, str]]
+    deletion: Optional[str]
+    answer: str
+
+    def __post_init__(self):
+        # Validate types
+        if not isinstance(self.keep, (str, tuple)) or (isinstance(self.keep, tuple) and len(self.keep) != 2):
+            raise ValueError("'keep' must be a string or a tuple of two strings")
+        if not isinstance(self.delete, (str, tuple)) or (isinstance(self.delete, tuple) and len(self.delete) != 2):
+            raise ValueError("'delete' must be a string or a tuple of two strings")
+
+        # Validate the indicator
+        parts = self._get_parts('keep', self.keep)
+        parts.update(self._get_parts('delete', self.delete))
+        if self.deletion:
+            parts['deletion'] = self.deletion
+        original = check_indicator_matches(self.clue, self.indicator, parts)
+
+        # Validate the answer
+        check_answer(self.answer)
+
+        # Validate the deletion operation
+        if not equals_normalized(self._join(self.keep), self.answer):
+            raise ValueError(f'The answer "{self.answer}" does not match the kept parts: "{self.keep}"')
+
+        # Validate the specified deletion (if provided)
+        if self.deletion and not equals_normalized(self._join(self.delete), self.deletion):
+            raise ValueError(f'The specified deletion "{self.deletion}" does not match the actual deleted part "{self.delete}"')
+
+    def _join(self, value: Union[str, Tuple[str, str]]) -> dict:
+        if isinstance(value, str):
+            return value
+        elif isinstance(value, tuple):
+            return ''.join(value)
+        else:
+            raise ValueError(f"'{prefix}' must be a string or a tuple of two strings")
+
+    def _get_parts(self, prefix: str, value: Union[str, Tuple[str, str]]) -> dict:
+        if isinstance(value, str):
+            return {prefix: value}
+        elif isinstance(value, tuple):
+            return {f'{prefix}1': value[0], f'{prefix}2': value[1]}
+        else:
+            raise ValueError(f"'{prefix}' must be a string or a tuple of two strings")
+
+    # def _reconstruct_original(self) -> str:
+    #     if isinstance(self.keep, tuple) and isinstance(self.delete, str):
+    #         return self.keep[0] + normalize(self.delete) + self.keep[1]
+    #     elif isinstance(self.keep, str) and isinstance(self.delete, str):
+    #         return normalize(self.delete) + normalize(self.keep)
+    #     elif isinstance(self.keep, tuple) and isinstance(self.delete, tuple):
+    #         return self.keep[0] + self.delete[0] + self.keep[1] + self.delete[1]
+    #     else:
+    #         return normalize(self.delete[0]) + normalize(self.keep) + normalize(self.delete[1])
 
 @dataclass(frozen=True)
 class Definition(ClueType):
@@ -145,7 +248,7 @@ class Hidden(ClueType):
     >>> Hidden('Incorrect hidden clue', '<left><hidden><right> hides', 'Inc', 'orrect', ' hidden clue', 'WRONG')
     Traceback (most recent call last):
     ...
-    ValueError: Indicator must match: clue: "Incorrect hidden clue", indicator: "<left><hidden><right> hides", parts: "{'left': 'Inc', 'hidden': 'orrect', 'right': ' hidden clue'}", indicator replaced with parts: "Incorrect hidden clue hides"
+    ValueError: Indicator must match: clue: "Incorrect hidden clue", indicator: "<left><hidden><right> hides", parts: "{'left': 'Inc', 'hidden': 'orrect', 'right': ' hidden clue'}", indicator replaced with parts: "Incorrect hidden clue hides", got: "Incorrect hidden clue hides"
     """
     clue: str
     indicator: str

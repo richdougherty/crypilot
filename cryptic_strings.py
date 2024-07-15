@@ -313,7 +313,8 @@ def check_indicator_matches(clue: str, indicator: str, parts: dict[str, str]) ->
     >>> check_indicator_matches('shredded pickle', 'shredded <anagram>', { 'anagram': 'corset' })
     Traceback (most recent call last):
     ...
-    ValueError: Indicator must match: clue: "shredded pickle", indicator: "shredded <anagram>", parts: "{'anagram': 'corset'}", indicator replaced with parts: "shredded corset"
+    ValueError: Indicator must match: clue: "shredded pickle", indicator: "shredded <anagram>", parts: "{'anagram': 'corset'}", indicator replaced with parts: "shredded corset", got: "shredded corset"
+
     >>> check_indicator_matches('PAL outside of U', '<left><right> outside of <middle>', {'left': 'P', 'right': 'AL', 'middle': 'U'})
     >>> check_indicator_matches('word shaken up', '<fodder> shaken up', { 'fodder': 'word' })
     """
@@ -331,5 +332,5 @@ def check_indicator_matches(clue: str, indicator: str, parts: dict[str, str]) ->
         replaced_indicator = replaced_indicator.replace(bracketed_key, value, 1)
     
     if not equals_normalized(replaced_indicator, clue):
-        error_message = f'Indicator must match: clue: "{clue}", indicator: "{indicator}", parts: "{parts}", indicator replaced with parts: "{replaced_indicator}"'
+        error_message = f'Indicator must match: clue: "{clue}", indicator: "{indicator}", parts: "{parts}", indicator replaced with parts: "{replaced_indicator}", got: "{replaced_indicator}"'
         raise ValueError(error_message)
