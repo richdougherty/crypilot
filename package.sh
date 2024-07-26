@@ -12,6 +12,11 @@ file_list
 echo
 echo
 
+echo "Last 10 git log entries:"
+git log -n 10 --pretty=format:"%h - %an, %ar : %s"
+echo
+echo
+
 file_list | while read -r file; do
     echo "File: $file"
     echo "----------------------------------------"
