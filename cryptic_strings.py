@@ -1,4 +1,7 @@
 import re
+from typing import Union, List, Optional
+
+StringOrList = Union[str, List[str]]
 
 def normalize(s: str) -> str:
     """
@@ -242,17 +245,17 @@ def answer_matches_pattern(answer: str, answer_pattern: str):
     # Match the clean answer against the pattern
     return bool(re.match(pattern, clean_answer, re.IGNORECASE))
 
-def indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> bool:
+def indicator_matches(clue: str, indicator: str, parts: dict[str, Optional[StringOrList]]) -> bool:
     """
-    Confirms whether an indicator string when applied to the given fodder
-    string produces the given results.
+    Confirms whether an indicator string when applied to the given parts
+    produces the given results.
 
     Args:
         clue (str): The original clue string.
         indicator (str): The indicator string with placeholders.
-        parts (dict[str, str]): A dictionary of parts to replace in the indicator.
+        parts (dict[str, Optional[StringOrList]]): A dictionary of parts to replace in the indicator.
                                 A value of None for a part indicates it should be
-                                skipped.
+                                skipped. A list indicates multiple substitutions.
 
     Returns:
         bool: True if the indicator matches the clue after replacements, False otherwise.
@@ -262,38 +265,16 @@ def indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> bool:
 
     >>> indicator_matches('shredded corset', 'shredded <anagram>', { 'anagram': 'corset' })
     True
-    >>> indicator_matches('shredded pickle', 'shredded <anagram>', { 'anagram': 'corset' })
+    >>> indicator_matches('PAL outside of U', '<left><right> outside of <middle>', {'left': 'P', 'right': 'AL', 'middle': 'U'})
+    True
+    >>> indicator_matches('DARLING heartlessly', '<keep><delete><keep> heartlessly', {'keep': ['DAR', 'ING'], 'delete': 'L'})
+    True
+    >>> indicator_matches('Invalid STAR', '<keep><delete>', {'keep': 'TAR', 'delete': ['S', 'X']})
     False
-    >>> indicator_matches(
-    ...     'PAL outside of U',
-    ...     '<left><right> outside of <middle>',
-    ...     {
-    ...         'left': 'P',
-    ...         'right': 'AL',
-    ...         'middle': 'U'
-    ...     }
-    ... )
-    True
-    >>> indicator_matches('mixed up clues', 'mixed up <anagram>', { 'anagram': 'clues' })
-    True
-    >>> indicator_matches('word shaken up', '<fodder> shaken up', { 'fodder': 'word' })
-    True
     """
-    replaced_indicator = indicator
-    for key, value in parts.items():
-        if value is None:
-            # A value of None indicates that the <key> is not present
-            # This can be used to have variations on common patterns, but
-            # exclude some parts for them. E.g. a hidden clue with no
-            # <left>, only a <hidden> and <right>.
-            continue
-        bracketed_key = f'<{key}>'
-        if bracketed_key not in replaced_indicator:
-            raise ValueError(f"Bracketed key '{bracketed_key}' not found in indicator")
-        replaced_indicator = replaced_indicator.replace(bracketed_key, value, 1)
-    return equals_normalized(replaced_indicator, clue)
+    return _check_indicator_matches(clue, indicator, parts, raise_error=False)
 
-def check_indicator_matches(clue: str, indicator: str, parts: dict[str, str]) -> None:
+def check_indicator_matches(clue: str, indicator: str, parts: dict[str, Optional[StringOrList]]) -> None:
     """
     Checks if an indicator string when applied to the given parts
     produces the given clue. Raises a ValueError with diagnostic information if not.
@@ -301,36 +282,51 @@ def check_indicator_matches(clue: str, indicator: str, parts: dict[str, str]) ->
     Args:
         clue (str): The original clue string.
         indicator (str): The indicator string with placeholders.
-        parts (dict[str, str]): A dictionary of parts to replace in the indicator.
+        parts (dict[str, Optional[StringOrList]]): A dictionary of parts to replace in the indicator.
                                 A value of None for a part indicates it should be
-                                skipped.
+                                skipped. A list indicates multiple substitutions.
 
     Raises:
         ValueError: If the indicator doesn't match the clue after replacements,
                     with detailed diagnostic information.
 
     >>> check_indicator_matches('shredded corset', 'shredded <anagram>', { 'anagram': 'corset' })
-    >>> check_indicator_matches('shredded pickle', 'shredded <anagram>', { 'anagram': 'corset' })
+    >>> check_indicator_matches('DARLING heartlessly', '<keep><delete><keep> heartlessly', {'keep': ['DAR', 'ING'], 'delete': 'L'})
+    >>> check_indicator_matches('Invalid STAR', '<keep><delete>', {'keep': 'TAR', 'delete': ['S', 'X']})
     Traceback (most recent call last):
     ...
-    ValueError: Indicator must match: clue: "shredded pickle", indicator: "shredded <anagram>", parts: "{'anagram': 'corset'}", indicator replaced with parts: "shredded corset", got: "shredded corset"
-
-    >>> check_indicator_matches('PAL outside of U', '<left><right> outside of <middle>', {'left': 'P', 'right': 'AL', 'middle': 'U'})
-    >>> check_indicator_matches('word shaken up', '<fodder> shaken up', { 'fodder': 'word' })
+    ValueError: Number of occurrences of <delete> (1) does not match the number of substitutions (2)
     """
+    _check_indicator_matches(clue, indicator, parts, raise_error=True)
+
+def _check_indicator_matches(clue: str, indicator: str, parts: dict[str, Optional[StringOrList]], raise_error: bool) -> Union[bool, None]:
     replaced_indicator = indicator
     for key, value in parts.items():
         if value is None:
-            # A value of None indicates that the <key> is not present
-            # This can be used to have variations on common patterns, but
-            # exclude some parts for them. E.g. a hidden clue with no
-            # <left>, only a <hidden> and <right>.
             continue
         bracketed_key = f'<{key}>'
-        if bracketed_key not in replaced_indicator:
-            raise ValueError(f"Bracketed key '{bracketed_key}' not found in indicator")
-        replaced_indicator = replaced_indicator.replace(bracketed_key, value, 1)
-    
+        if isinstance(value, str):
+            if bracketed_key not in replaced_indicator:
+                if raise_error:
+                    raise ValueError(f"Bracketed key '{bracketed_key}' not found in indicator")
+                return False
+            replaced_indicator = replaced_indicator.replace(bracketed_key, value, 1)
+        elif isinstance(value, list):
+            count = replaced_indicator.count(bracketed_key)
+            if count != len(value):
+                if raise_error:
+                    raise ValueError(f"Number of occurrences of {bracketed_key} ({count}) does not match the number of substitutions ({len(value)})")
+                return False
+            for sub_value in value:
+                replaced_indicator = replaced_indicator.replace(bracketed_key, sub_value, 1)
+        else:
+            if raise_error:
+                raise ValueError(f"Invalid type for key '{key}': expected str or list, got {type(value)}")
+            return False
+
     if not equals_normalized(replaced_indicator, clue):
-        error_message = f'Indicator must match: clue: "{clue}", indicator: "{indicator}", parts: "{parts}", indicator replaced with parts: "{replaced_indicator}", got: "{replaced_indicator}"'
-        raise ValueError(error_message)
+        if raise_error:
+            error_message = f'Indicator must match: clue: "{clue}", indicator: "{indicator}", parts: "{parts}", indicator replaced with parts: "{replaced_indicator}", got: "{replaced_indicator}"'
+            raise ValueError(error_message)
+        return False
+    return True if not raise_error else None
