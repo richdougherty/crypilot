@@ -8,12 +8,25 @@ file_list() {
 }
 
 echo "File index:"
+echo "----------------------------------------"
 file_list
 echo
 echo
 
 echo "Last 10 git log entries:"
+echo "----------------------------------------"
 git log -n 10 --pretty=format:"%h - %an, %ar : %s"
+echo
+echo
+
+echo "Running tests:"
+echo "----------------------------------------"
+python -m doctest *.py
+test_exit_code=$?
+echo "Test exit code: $test_exit_code"
+echo
+echo "Test output:"
+python -m doctest *.py 2>&1
 echo
 echo
 
