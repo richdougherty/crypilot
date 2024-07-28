@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from clues import *
+from clues import ClueType
 from cry_strings import *
 from clue_sources import *
 
@@ -21,6 +21,7 @@ class DoubleSolution(SolutionType):
         solution2 (ClueType): The second part of the solution.
         answer (str): The final answer to the clue.
 
+    >>> from clues import *
     >>> DoubleSolution(
     ...   clue = 'Not seeing window covering',
     ...   answer_pattern = '_____',
@@ -63,6 +64,20 @@ class DoubleSolution(SolutionType):
     ...   answer = 'REGAL'
     ... )
     DoubleSolution(clue='Returned beer fit for a king', answer_pattern='_____', solution1=Reversal(clue=Combination(input='Returned beer', prefix='Returned ', combined=Definition(clue='beer', answer='LAGER'), suffix='', output='Returned LAGER'), indicator='Returned <fodder>', fodder='LAGER', answer='REGAL'), solution2=Definition(clue='fit for a king', answer='REGAL'), answer='REGAL')
+
+    >>> DoubleSolution(
+    ...     clue = 'Reportedly, couple shave',
+    ...     answer_pattern = '____',
+    ...     solution1 = Homophone(
+    ...         Combination('Reportedly, couple', 'Reportedly, ', Definition('couple', 'PAIR'), '', 'Reportedly, PAIR'),
+    ...         'Reportedly, <sound_alike>',
+    ...         'PAIR',
+    ...         'PARE'
+    ...     ),
+    ...     solution2 = Definition('shave', 'PARE'),
+    ...     answer = 'PARE'
+    ... )
+    DoubleSolution(clue='Reportedly, couple shave', answer_pattern='____', solution1=Homophone(clue=Combination(input='Reportedly, couple', prefix='Reportedly, ', combined=Definition(clue='couple', answer='PAIR'), suffix='', output='Reportedly, PAIR'), indicator='Reportedly, <sound_alike>', sound_alike='PAIR', answer='PARE'), solution2=Definition(clue='shave', answer='PARE'), answer='PARE')
 
     >>> # Test for error when solutions don't match
     >>> DoubleSolution(

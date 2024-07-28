@@ -7,7 +7,7 @@ and logic behind cryptic crosswords.
 ## Current Features
 
 - Data structures for representing various types of cryptic clues
-  (e.g., Anagrams, Containers, Deletions)
+  (e.g., Anagrams, Containers, Deletions, Homophones)
 - Utility functions for string normalization and manipulation specific
   to cryptic crosswords
 - Basic validation of clue structures and answers

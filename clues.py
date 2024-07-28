@@ -257,6 +257,61 @@ class Hidden(ClueType):
         )
 
 @dataclass(frozen=True)
+class Homophone(ClueType):
+    """
+    A homophone type clue. The answer sounds like another word or phrase in the clue.
+
+    Attributes:
+        clue (ClueSource): The clue text, either a string or a Combination.
+        indicator (IndicatorPatternStr): The part of the clue that indicates a homophone should be used.
+        sound_alike (IndicatorPartStr): The word or phrase that sounds like the answer.
+        answer (AnswerStr): The answer to the clue.
+
+    >>> from clues import *
+
+    >>> Homophone(
+    ...     Combination('We hear twins', 'We hear ', Definition('twins', 'PAIR'), '', 'We hear PAIR'),
+    ...     'We hear <sound_alike>',
+    ...     'PAIR',
+    ...     'PARE'
+    ... )
+    Homophone(clue=Combination(input='We hear twins', prefix='We hear ', combined=Definition(clue='twins', answer='PAIR'), suffix='', output='We hear PAIR'), indicator='We hear <sound_alike>', sound_alike='PAIR', answer='PARE')
+
+    >>> Homophone(
+    ...     Combination('Reportedly, couple', 'Reportedly, ', Definition('couple', 'PAIR'), '', 'Reportedly, PAIR'),
+    ...     'Reportedly, <sound_alike>',
+    ...     'PAIR',
+    ...     'PARE'
+    ... )
+    Homophone(clue=Combination(input='Reportedly, couple', prefix='Reportedly, ', combined=Definition(clue='couple', answer='PAIR'), suffix='', output='Reportedly, PAIR'), indicator='Reportedly, <sound_alike>', sound_alike='PAIR', answer='PARE')
+
+    >>> Homophone(
+    ...     'Incorrect sound',
+    ...     'Incorrect <sound_alike>',
+    ...     'bear',
+    ...     'BEER'
+    ... )
+    Traceback (most recent call last):
+    ...
+    ValueError: Indicator must match: clue: "Incorrect sound", indicator: "Incorrect <sound_alike>", parts: "{'sound_alike': 'bear'}", indicator replaced with parts: "Incorrect bear", got: "Incorrect bear"
+    """
+    clue: ClueSource
+    indicator: IndicatorPatternStr
+    sound_alike: IndicatorPartStr
+    answer: AnswerStr
+
+    def __post_init__(self):
+        # Validate that the indicator matches the clue and produces the sound-alike word
+        self.check_indicator_matches({'sound_alike': self.sound_alike})
+
+        # Validate that the answer is in the correct format
+        self.check_answer()
+
+        # Note: We can't programmatically verify that the sound_alike actually sounds like the answer.
+        # This would require a pronunciation database or API, which is beyond the scope of this implementation.
+        # Instead, we rely on the clue setter to ensure the homophone is valid.
+
+@dataclass(frozen=True)
 class Reversal(ClueType):
     """
     A reversal type clue. The answer is formed by reversing a word or phrase in the clue.
