@@ -30,6 +30,54 @@ This project is in its early stages and is primarily for
 experimentation and learning. It's not yet ready for practical use in
 solving or generating full cryptic crosswords.
 
+## Clue Types
+
+Clue types represent different cryptic crossword clue structures. They are defined in [clues.py](./clues.py).
+
+- Equivalences
+  - ✅ Straight definition
+  - ✅ Cryptic definition
+  - ❌ Common abbreviations
+  - ❌ Foreign language equivalents
+  - ❌ Literary references
+- Wordplay
+  - ✅ Anagram
+  - ❌ Charade
+  - ✅ Container
+  - Deletions
+    - ✅ Standard deletion
+    - ❌ Heads and tails (special case of deletion)
+    - ❌ Outsides (inverse of hidden word)
+  - Hidden
+    - ✅ Standard hidden word
+    - ❌ Initial or final letters
+    - ❌ Odd or even letters
+  - ✅ Homophone
+  - ❌ Letter bank
+  - ❌ Palindrome
+  - ✅ Reversal
+  - ❌ Spoonerism
+
+## Solution Types
+
+Solution types represent ways to combine clues into full solutions. They are defined in [solutions.py](./solutions.py).
+
+- Split
+  - ✅ Standard solution
+  - ✅ Double Definition
+  - ❌ Triple Solution (and higher multiples)
+- All
+  - ❌ &lit. (And Literally So)
+  - ❌ Semi-&lit.
+- ❌ Cryptic definition
+
+## Composition Types
+
+Composition types are used to construct more complex clues and solutions. They are defined in [clue_sources.py](./clue_sources.py).
+
+- ✅ Combination
+- ❌ Ignored words
+
 ## License
 
 This project is released under the [MIT License](LICENSE).
