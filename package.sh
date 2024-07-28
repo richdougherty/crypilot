@@ -13,6 +13,24 @@ file_list
 echo
 echo
 
+echo "Git status:"
+echo "----------------------------------------"
+git status
+echo
+echo
+
+echo "Staged commits:"
+echo "----------------------------------------"
+git diff --cached
+echo
+echo
+
+echo "Unstaged changes:"
+echo "----------------------------------------"
+git diff --cached
+echo
+echo
+
 echo "Last 10 git log entries:"
 echo "----------------------------------------"
 git log -n 10 --pretty=format:"%h - %an, %ar : %s"
