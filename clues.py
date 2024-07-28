@@ -34,7 +34,7 @@ class ClueType:
     answer: AnswerStr
 
     def __post_init__(self):
-        check_clue(clue_input(self.clue))
+        check_clue(clue_output(self.clue))
         check_answer(self.answer)
 
     def check_indicator_matches(self, parts: dict[str, Optional[IndicatorPart]]):
