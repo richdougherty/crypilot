@@ -17,7 +17,7 @@ and logic behind cryptic crosswords.
 ## Project Structure
 
 - [`clues.py`](./clues.py): Defines the main clue types and their structures
-- [`clue_text.py`](./clue_text.py): Handles combination clues and clue text processing
+- [`clue_sources.py`](./clue_sources.py): Clue source text is defined here as either a plain string or the result of a combination clue
 - [`cry_strings.py`](./cry_strings.py): Provides utility functions for string
 manipulation and validation
 - [`cry_types.py`](./cry_types.py): Contains type definitions used throughout the project

@@ -27,7 +27,7 @@ echo
 
 echo "Unstaged changes:"
 echo "----------------------------------------"
-git diff --cached
+git diff
 echo
 echo
 
@@ -39,12 +39,12 @@ echo
 
 echo "Running tests:"
 echo "----------------------------------------"
-python -m doctest *.py
+test_output=$(python -m doctest *.py 2>&1)
 test_exit_code=$?
 echo "Test exit code: $test_exit_code"
 echo
 echo "Test output:"
-python -m doctest *.py 2>&1
+echo $test_output
 echo
 echo
 

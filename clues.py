@@ -1,16 +1,23 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from cry_strings import *
-from clue_text import *
+from clue_sources import *
+
+if TYPE_CHECKING:
+    from clue_sources import Combination
 
 class ClueType:
     """
     Base class of all clue types. All clues have the form
-    SomeClueType(clue: Text, ..., answer: Answer)
+    SomeClueType(clue: ClueSource, ..., answer: AnswerStr)
+
+    Attributes:
+        clue (ClueSource): The clue text, either a string or a Combination.
+        answer (AnswerStr): The answer to the clue.
     """
-    def check_indicator_matches(self, parts: dict[str, Optional[StringOrList]]):
+    def check_indicator_matches(self, parts: dict[str, Optional[IndicatorPart]]):
         check_indicator_matches(clue_output(self.clue), self.indicator, parts)
-    
+
     def check_answer(self):
         check_answer(self.answer)
 
@@ -25,10 +32,10 @@ class Anagram(ClueType):
     rearranged to form the answer.
 
     Attributes:
-        clue (str): The full text of the clue.
-        indicator (str): The part of the clue that indicates an anagram should be performed.
-        fodder (str): The word or phrase to be anagrammed.
-        answer (str): The answer to the clue.
+        clue (ClueSource): The clue text, either a string or a Combination.
+        indicator (IndicatorPatternStr): The part of the clue that indicates an anagram should be performed.
+        fodder (IndicatorPartStr): The word or phrase to be anagrammed.
+        answer (AnswerStr): The answer to the clue.
 
     >>> Anagram('shredded corset', 'shredded <fodder>', 'corset', 'ESCORT')
     Anagram(clue='shredded corset', indicator='shredded <fodder>', fodder='corset', answer='ESCORT')
@@ -37,18 +44,18 @@ class Anagram(ClueType):
     ...
     ValueError: Answer "ANSWER" must be an anagram of "clue"
     """
-    clue: ClueText
-    indicator: str
-    fodder: str
-    answer: str
+    clue: ClueSource
+    indicator: IndicatorPatternStr
+    fodder: IndicatorPartStr
+    answer: AnswerStr
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the fodder
-        self.check_indicator_matches({'fodder': self.fodder}) 
-       
+        self.check_indicator_matches({'fodder': self.fodder})
+
         # Validate that the answer is in the correct format
         self.check_answer()
-        
+
         # Validate that the answer is an anagram of the fodder
         self.check_normalized_equal(
             ''.join(sorted(normalize(self.fodder))),
@@ -62,22 +69,22 @@ class Container(ClueType):
     A container type clue. One set of letters is placed inside another.
 
     Attributes:
-        clue (str): The full text of the clue.
-        indicator (str): The part of the clue that indicates a container should be formed.
-        outer_left (str): The left part of the word or phrase that forms the outer part of the container.
-        outer_right (str): The right part of the word or phrase that forms the outer part of the container.
-        inner (str): The word or phrase to be placed inside the outer parts.
-        answer (str): The answer to the clue.
+        clue (ClueSource): The clue text, either a string or a Combination.
+        indicator (IndicatorPatternStr): The part of the clue that indicates a container should be formed.
+        outer_left (IndicatorPartStr): The left part of the word or phrase that forms the outer part of the container.
+        outer_right (IndicatorPartStr): The right part of the word or phrase that forms the outer part of the container.
+        inner (IndicatorPartStr): The word or phrase to be placed inside the outer parts.
+        answer (AnswerStr): The answer to the clue.
 
     >>> Container('PAL outside of U', '<outer_left><outer_right> outside of <inner>', 'PA', 'L', 'U', 'PAUL')
     Container(clue='PAL outside of U', indicator='<outer_left><outer_right> outside of <inner>', outer_left='PA', outer_right='L', inner='U', answer='PAUL')
-    
+
     >>> Container('O in VICE', '<inner> in <outer_left><outer_right>', 'V', 'ICE', 'O', 'VOICE')
     Container(clue='O in VICE', indicator='<inner> in <outer_left><outer_right>', outer_left='V', outer_right='ICE', inner='O', answer='VOICE')
-   
+
     >>> Container('CAMUS banks P', '<outer_left><outer_right> banks <inner>', 'CAM', 'US', 'P', 'CAMPUS')
     Container(clue='CAMUS banks P', indicator='<outer_left><outer_right> banks <inner>', outer_left='CAM', outer_right='US', inner='P', answer='CAMPUS')
-    
+
     >>> Container('Incorrect container', '<outer_left><outer_right> contains <inner>', 'OU', 'T', 'IN', 'WRONG')
     Traceback (most recent call last):
     ...
@@ -86,12 +93,12 @@ class Container(ClueType):
     >>> Container('R in GEMS', '<inner> in <outer_left><outer_right>', 'GE', 'MS', 'R', 'GERMS')
     Container(clue='R in GEMS', indicator='<inner> in <outer_left><outer_right>', outer_left='GE', outer_right='MS', inner='R', answer='GERMS')
     """
-    clue: str
-    indicator: str
-    outer_left: str
-    outer_right: str
-    inner: str
-    answer: str
+    clue: ClueSource
+    indicator: IndicatorPatternStr
+    outer_left: IndicatorPartStr
+    outer_right: IndicatorPartStr
+    inner: IndicatorPartStr
+    answer: AnswerStr
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the container
@@ -100,10 +107,10 @@ class Container(ClueType):
             'outer_right': self.outer_right,
             'inner': self.inner
         })
-       
+
         # Validate that the answer is in the correct format
         self.check_answer()
-        
+
         # Validate that the answer is formed by putting inner between outer_left and outer_right
         expected_answer = normalize(self.outer_left + self.inner + self.outer_right)
         self.check_normalized_equal(
@@ -112,23 +119,18 @@ class Container(ClueType):
             f'Answer "{self.answer}" must be formed by putting "{self.inner}" between "{self.outer_left}" and "{self.outer_right}"'
         )
 
-from dataclasses import dataclass
-from typing import Union, Tuple, Optional
-from cry_strings import *
-from clue_text import *
-
 @dataclass(frozen=True)
 class Deletion(ClueType):
     """
     A deletion type clue. Letters are removed from a word or phrase to form the answer.
 
     Attributes:
-        clue (str): The full text of the clue.
-        indicator (str): The part of the clue that indicates how the deletion should be performed.
-        keep (StringOrList): The part(s) of the fodder that are kept.
-        delete (StringOrList): The part(s) of the fodder that are deleted.
-        deletion (Optional[str]): The specific letter(s) being deleted, if mentioned in the clue.
-        answer (str): The answer to the clue.
+        clue (ClueSource): The clue text, either a string or a Combination.
+        indicator (IndicatorPatternStr): The part of the clue that indicates how the deletion should be performed.
+        keep (IndicatorPart): The part(s) of the fodder that are kept.
+        delete (IndicatorPart): The part(s) of the fodder that are deleted.
+        deletion (Optional[IndicatorPartStr]): The specific letter(s) being deleted, if mentioned in the clue.
+        answer (AnswerStr): The answer to the clue.
 
     >>> Deletion("Beheaded STAR", "Beheaded <delete><keep>", "TAR", "S", None, "TAR")
     Deletion(clue='Beheaded STAR', indicator='Beheaded <delete><keep>', keep='TAR', delete='S', deletion=None, answer='TAR')
@@ -152,12 +154,12 @@ class Deletion(ClueType):
     ...
     ValueError: Indicator must match: clue: "Mismatched CRAVEN", indicator: "<keep><delete> <deletion> away", parts: "{'keep': 'RAVEN', 'delete': 'C', 'deletion': 'X'}", indicator replaced with parts: "RAVENC X away", got: "RAVENC X away"
     """
-    clue: str
-    indicator: str
-    keep: StringOrList
-    delete: StringOrList
-    deletion: Optional[str]
-    answer: str
+    clue: ClueSource
+    indicator: IndicatorPatternStr
+    keep: IndicatorPart
+    delete: IndicatorPart
+    deletion: Optional[IndicatorPartStr]
+    answer: AnswerStr
 
     def __post_init__(self):
         # Validate the indicator
@@ -190,8 +192,8 @@ class Definition(ClueType):
     directly defines the answer.
 
     Attributes:
-        clue (str): The definition part of the clue.
-        answer (str): The answer to the clue.
+        clue (ClueSource): The clue text, either a string or a Combination.
+        answer (AnswerStr): The answer to the clue.
 
     >>> Definition('Chaperone', 'ESCORT')
     Definition(clue='Chaperone', answer='ESCORT')
@@ -204,8 +206,8 @@ class Definition(ClueType):
     >>> Definition('Celestial body', 'STAR')
     Definition(clue='Celestial body', answer='STAR')
     """
-    clue: str
-    answer: str
+    clue: ClueSource
+    answer: AnswerStr
 
     def __post_init__(self):
         # Validate that the answer is in the correct format
@@ -217,12 +219,12 @@ class Hidden(ClueType):
     A hidden word type clue. The answer is hidden within the clue text.
 
     Attributes:
-        clue (str): The full text of the clue.
-        indicator (str): The part of the clue that indicates a hidden word.
-        left (str): The text before the hidden word.
-        hidden (str): The hidden word (the answer).
-        right (str): The text after the hidden word.
-        answer (str): The answer to the clue.
+        clue (ClueSource): The clue text, either a string or a Combination.
+        indicator (IndicatorPatternStr): The part of the clue that indicates a hidden word.
+        left (IndicatorPartStr): The text before the hidden word.
+        hidden (IndicatorPartStr): The hidden word (the answer).
+        right (IndicatorPartStr): The text after the hidden word.
+        answer (AnswerStr): The answer to the clue.
 
     >>> Hidden('Found ermine, deer hides', '<left><hidden><right> hides', 'Found ', 'ermine, d', 'eer', 'ERMINED')
     Hidden(clue='Found ermine, deer hides', indicator='<left><hidden><right> hides', left='Found ', hidden='ermine, d', right='eer', answer='ERMINED')
@@ -233,12 +235,12 @@ class Hidden(ClueType):
     ...
     ValueError: Indicator must match: clue: "Incorrect hidden clue", indicator: "<left><hidden><right> hides", parts: "{'left': 'Inc', 'hidden': 'orrect', 'right': ' hidden clue'}", indicator replaced with parts: "Incorrect hidden clue hides", got: "Incorrect hidden clue hides"
     """
-    clue: str
-    indicator: str
-    left: str
-    hidden: str
-    right: str
-    answer: str
+    clue: ClueSource
+    indicator: IndicatorPatternStr
+    left: IndicatorPartStr
+    hidden: IndicatorPartStr
+    right: IndicatorPartStr
+    answer: AnswerStr
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the hidden word
@@ -260,10 +262,10 @@ class Reversal(ClueType):
     A reversal type clue. The answer is formed by reversing a word or phrase in the clue.
 
     Attributes:
-        clue (str): The full text of the clue.
-        indicator (str): The part of the clue that indicates a reversal should be performed.
-        fodder (str): The word or phrase to be reversed.
-        answer (str): The answer to the clue.
+        clue (ClueSource): The clue text, either a string or a Combination.
+        indicator (IndicatorPatternStr): The part of the clue that indicates a reversal should be performed.
+        fodder (IndicatorPartStr): The word or phrase to be reversed.
+        answer (AnswerStr): The answer to the clue.
 
     >>> Reversal('Returned lager', 'Returned <fodder>', 'lager', 'REGAL')
     Reversal(clue='Returned lager', indicator='Returned <fodder>', fodder='lager', answer='REGAL')
@@ -276,18 +278,18 @@ class Reversal(ClueType):
     ...
     ValueError: Answer "ALGAE" must be a reversal of "lager"
     """
-    clue: str
-    indicator: str
-    fodder: str
-    answer: str
+    clue: ClueSource
+    indicator: IndicatorPatternStr
+    fodder: IndicatorPartStr
+    answer: AnswerStr
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the fodder
-        self.check_indicator_matches({'fodder': self.fodder}) 
-      
+        self.check_indicator_matches({'fodder': self.fodder})
+
         # Validate that the answer is in the correct format
         self.check_answer()
-       
+
         # Validate that the answer is a reversal of the fodder
         self.check_normalized_equal(
             normalize(self.fodder)[::-1],

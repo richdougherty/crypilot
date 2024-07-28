@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from clues import *
 from cry_strings import *
-from clue_text import *
-    
+from clue_sources import *
+
 class SolutionType:
     """
     Base class for all solution types.
@@ -109,27 +109,27 @@ class DoubleSolution(SolutionType):
     def __post_init__(self):
         # Validate the answer pattern
         check_answer_pattern(self.answer_pattern)
-        
+
         # Validate the answer
         check_answer(self.answer)
-        
+
         # Check if the combined clues match the full clue
         joined_clues = clue_input(self.solution1.clue) + ' ' + clue_input(self.solution2.clue)
         if not equals_normalized(self.clue, joined_clues):
             raise ValueError(f'In a double solution, the clues for each solution should join to make the whole solution: "{self.clue}" != "{joined_clues}"')
-        
+
         # Check if the two solutions are different
         if self.solution1 == self.solution2:
             raise ValueError(f'In a double solution, the first solution ({self.solution1}) must be different to the second ({self.solution2})')
-        
+
         # Check if both solution answers match
         if self.solution1.answer != self.solution2.answer:
             raise ValueError(f'In a double solution, both solution answers must match: "{self.solution1.answer}" != "{self.solution2.answer}"')
-        
+
         # Check if the solution answers match the final answer
         if self.solution1.answer != self.answer:
             raise ValueError(f'In a double solution, the solution answers must match the final answer: "{self.solution1.answer}" != "{self.answer}"')
-        
+
         # Validate that the answer matches the answer pattern
         if not answer_matches_pattern(self.answer, self.answer_pattern):
             raise ValueError(f'The answer "{self.answer}" does not match the answer pattern "{self.answer_pattern}"')

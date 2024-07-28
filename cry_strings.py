@@ -236,23 +236,23 @@ def answer_matches_pattern(answer: AnswerStr, answer_pattern: AnswerPatternStr) 
     check_answer_pattern(answer_pattern)
     # Normalize the answer by removing non-alphabetic characters
     clean_answer = ''.join(c for c in answer if c.isalpha())
-    
+
     # Create a regex pattern from the answer_pattern
     pattern = answer_pattern.replace('_', '.').replace(' ', r'\s*').replace('-', r'-?')
     pattern = f'^{pattern}$'
-    
+
     # Match the clean answer against the pattern
     return bool(re.match(pattern, clean_answer, re.IGNORECASE))
 
-def indicator_matches(clue: ClueStr, indicator: IndicatorStr, parts: IndicatorParts) -> bool:
+def indicator_matches(clue: ClueStr, indicator: IndicatorPatternStr, parts: IndicatorParts) -> bool:
     """
     Confirms whether an indicator string when applied to the given parts
     produces the given results.
 
     Args:
-        clue (str): The original clue string.
-        indicator (str): The indicator string with placeholders.
-        parts (dict[str, Optional[StringOrList]]): A dictionary of parts to replace in the indicator.
+        clue (ClueStr): The original clue string.
+        indicator (IndicatorPatternStr): The indicator string with placeholders.
+        parts (IndicatorParts): A dictionary of parts to replace in the indicator.
                                 A value of None for a part indicates it should be
                                 skipped. A list indicates multiple substitutions.
 
@@ -275,15 +275,15 @@ def indicator_matches(clue: ClueStr, indicator: IndicatorStr, parts: IndicatorPa
     """
     return _check_indicator_matches(clue, indicator, parts) is None
 
-def check_indicator_matches(clue: ClueStr, indicator: IndicatorStr, parts: IndicatorParts) -> None:
+def check_indicator_matches(clue: ClueStr, indicator: IndicatorPatternStr, parts: IndicatorParts) -> None:
     """
     Checks if an indicator string when applied to the given parts
     produces the given clue. Raises a ValueError with diagnostic information if not.
 
     Args:
-        clue (str): The original clue string.
-        indicator (str): The indicator string with placeholders.
-        parts (dict[str, Optional[StringOrList]]): A dictionary of parts to replace in the indicator.
+        clue (ClueStr): The original clue string.
+        indicator (IndicatorPatternStr): The indicator string with placeholders.
+        parts (IndicatorParts): A dictionary of parts to replace in the indicator.
                                 A value of None for a part indicates it should be
                                 skipped. A list indicates multiple substitutions.
 
@@ -302,7 +302,7 @@ def check_indicator_matches(clue: ClueStr, indicator: IndicatorStr, parts: Indic
     if error:
         raise ValueError(error)
 
-def _check_indicator_matches(clue: ClueStr, indicator: IndicatorStr, parts: IndicatorParts) -> Optional[str]:
+def _check_indicator_matches(clue: ClueStr, indicator: IndicatorPatternStr, parts: IndicatorParts) -> Optional[str]:
     """
     Checks if an indicator string when applied to the given parts
     produces the given clue. Returns None if the indicator matches,
@@ -310,7 +310,7 @@ def _check_indicator_matches(clue: ClueStr, indicator: IndicatorStr, parts: Indi
 
     Args:
         clue (ClueStr): The original clue string.
-        indicator (IndicatorStr): The indicator string with placeholders.
+        indicator (IndicatorPatternStr): The indicator string with placeholders.
         parts (IndicatorParts): A dictionary of parts to replace in the indicator.
 
     Returns:
