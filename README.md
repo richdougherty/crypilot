@@ -12,14 +12,16 @@ and logic behind cryptic crosswords.
   to cryptic crosswords
 - Basic validation of clue structures and answers
 - Support for combination clues and double solutions
+- Type definitions for improved code clarity and consistency
 
 ## Project Structure
 
-- `clues.py`: Defines the main clue types and their structures
-- `clue_text.py`: Handles combination clues and clue text processing
-- `cry_strings.py`: Provides utility functions for string
+- [`clues.py`](./clues.py): Defines the main clue types and their structures
+- [`clue_text.py`](./clue_text.py): Handles combination clues and clue text processing
+- [`cry_strings.py`](./cry_strings.py): Provides utility functions for string
 manipulation and validation
-- `solutions.py`: Implements solution types, including double
+- [`cry_types.py`](./cry_types.py): Contains type definitions used throughout the project
+- [`solutions.py`](./solutions.py): Implements solution types, including double
   solutions
 
 ## Status
