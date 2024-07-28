@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from clues import *
-from cryptic_strings import *
+from cry_strings import *
 from clue_text import *
     
 class SolutionType:

@@ -17,8 +17,8 @@ and logic behind cryptic crosswords.
 
 - `clues.py`: Defines the main clue types and their structures
 - `clue_text.py`: Handles combination clues and clue text processing
-- `cryptic_strings.py`: Provides utility functions for string
-  manipulation and validation
+- `cry_strings.py`: Provides utility functions for string
+manipulation and validation
 - `solutions.py`: Implements solution types, including double
   solutions
 

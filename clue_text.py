@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Union
-from cryptic_strings import *
+from cry_strings import *
 import clues
 
 ClueText = Union[str, 'Combination']

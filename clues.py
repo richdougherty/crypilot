@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from cryptic_strings import *
+from cry_strings import *
 from clue_text import *
 
 class ClueType:
@@ -100,7 +100,7 @@ class Container(ClueType):
 
 from dataclasses import dataclass
 from typing import Union, Tuple, Optional
-from cryptic_strings import *
+from cry_strings import *
 from clue_text import *
 
 @dataclass(frozen=True)
