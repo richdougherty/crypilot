@@ -390,3 +390,95 @@ def _check_indicator_matches(clue: ClueStr, indicator: IndicatorPatternStr, part
     if not equals_normalized(replaced_indicator, clue):
         return f'Indicator must match: clue: "{clue}", indicator: "{indicator}", parts: "{parts}", indicator replaced with parts: "{replaced_indicator}", got: "{replaced_indicator}"'
     return None
+
+def split_tokens(s: str) -> str:
+    """
+    Splits a string into tokens, separating each character with the token separator.
+    Indicator part markers are treated as single tokens.
+
+    Args:
+        s (str): The string to tokenize.
+
+    Returns:
+        str: The tokenized string.
+
+    Raises:
+        ValueError: If the input string already contains invalid token separators.
+
+    >>> split_tokens('foo')
+    'f|o|o'
+    >>> split_tokens('f|o|o')
+    'f|o|o'
+
+    >>> split_tokens('f||oo')
+    Traceback (most recent call last):
+    ...
+    ValueError: String has illegal token split, probable error: was "f||oo", expected "f|o|o"
+    >>> split_tokens('f|oo')
+    Traceback (most recent call last):
+    ...
+    ValueError: String has illegal token split, probable error: was "f|oo", expected "f|o|o"
+    >>> split_tokens('f|oo|')
+    Traceback (most recent call last):
+    ...
+    ValueError: String has illegal token split, probable error: was "f|oo|", expected "f|o|o"
+
+    >>> split_tokens('<hello> there')
+    '<hello>| |t|h|e|r|e'
+    >>> split_tokens('<hello> <there>')
+    '<hello>| |<there>'
+    >>> split_tokens('a-b c')
+    'a|-|b| |c'
+    >>> split_tokens('foo <bar> baz <qux>')
+    'f|o|o| |<bar>| |b|a|z| |<qux>'
+    """
+    #print('---s', s)
+    separator = cry_config().token_separator
+    start, end = cry_config().indicator_delims
+
+    # We should accept strings with the separator provided they are already in
+    # the correct form. This makes this operation idempotent. However, since
+    # it's easy to make mistakes with this kind of thing we also check that the
+    # provided string is correctly split into tokens, just in case.
+    if separator in s:
+        joined = join_tokens(s)
+        expected = split_tokens(joined) # Shouldn't loop, since we've removed separators 
+        if s == expected:
+            return s
+        else:
+            raise ValueError(f'String has illegal token split, probable error: was "{s}", expected "{expected}"')
+
+    # Split the string, keeping indicator parts together
+    pattern = f'({re.escape(start)}[^{re.escape(end)}]*{re.escape(end)})'
+    parts = filter(None, re.split(pattern, s))
+    
+    def tokenize_part(part):
+        if part.startswith(start) and part.endswith(end):
+            return part
+        else:
+            return separator.join(c for c in part)
+    
+    tokenized_parts = map(tokenize_part, parts)
+    return separator.join(tokenized_parts)
+
+def join_tokens(s: str) -> str:
+    """
+    Joins a tokenized string back into a regular string.
+
+    Args:
+        s (str): The tokenized string to join.
+
+    Returns:
+        str: The joined string.
+
+    >>> join_tokens('f|o|o')
+    'foo'
+    >>> join_tokens('<hello>| |t|h|e|r|e')
+    '<hello> there'
+    >>> join_tokens('<hello>| |<there>')
+    '<hello> <there>'
+    >>> join_tokens('a|-|b| |c')
+    'a-b c'
+    """
+    separator = cry_config().token_separator
+    return s.replace(separator, '')
