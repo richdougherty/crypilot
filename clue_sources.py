@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
-from cry_strings import equals_normalized
+from cry_strings import check_clue, equals_normalized
 from cry_types import ClueSource, ClueStr
 
 if TYPE_CHECKING:
@@ -29,6 +29,9 @@ class Combination:
     output: ClueStr
 
     def __post_init__(self):
+        check_clue(self.input)
+        check_clue(self.output)
+
         if not equals_normalized(self.input, self.prefix + self.combined.clue + self.suffix):
             raise ValueError(f'The Combination input does not match its prefix+combined.clue+suffix') # TODO: Include more info
 

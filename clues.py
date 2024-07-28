@@ -14,12 +14,31 @@ class ClueType:
     Attributes:
         clue (ClueSource): The clue text, either a string or a Combination.
         answer (AnswerStr): The answer to the clue.
+
+    >>> @dataclass
+    ... class SimpleClue(ClueType):
+    ...     clue: ClueSource
+    ...     answer: AnswerStr
+    >>> SimpleClue("Valid clue", "ANSWER")
+    SimpleClue(clue='Valid clue', answer='ANSWER')
+    >>> SimpleClue("Invalid <clue>", "ANSWER")
+    Traceback (most recent call last):
+    ...
+    ValueError: "Invalid <clue>" is not a valid clue: contains indicator delimiters < or >
+    >>> SimpleClue("Valid clue", "invalid answer")
+    Traceback (most recent call last):
+    ...
+    ValueError: "invalid answer" must be in "answer" form: only uppercase, spaces and hyphens
     """
+    clue: ClueSource
+    answer: AnswerStr
+
+    def __post_init__(self):
+        check_clue(clue_input(self.clue))
+        check_answer(self.answer)
+
     def check_indicator_matches(self, parts: dict[str, Optional[IndicatorPart]]):
         check_indicator_matches(clue_output(self.clue), self.indicator, parts)
-
-    def check_answer(self):
-        check_answer(self.answer)
 
     def check_normalized_equal(self, a: str, b: str, error_message: str):
         if not equals_normalized(a, b):
@@ -50,11 +69,10 @@ class Anagram(ClueType):
     answer: AnswerStr
 
     def __post_init__(self):
+        super().__post_init__()
+
         # Validate that the indicator matches the clue and produces the fodder
         self.check_indicator_matches({'fodder': self.fodder})
-
-        # Validate that the answer is in the correct format
-        self.check_answer()
 
         # Validate that the answer is an anagram of the fodder
         self.check_normalized_equal(
@@ -101,15 +119,14 @@ class Container(ClueType):
     answer: AnswerStr
 
     def __post_init__(self):
+        super().__post_init__()
+
         # Validate that the indicator matches the clue and produces the container
         self.check_indicator_matches({
             'outer_left': self.outer_left,
             'outer_right': self.outer_right,
             'inner': self.inner
         })
-
-        # Validate that the answer is in the correct format
-        self.check_answer()
 
         # Validate that the answer is formed by putting inner between outer_left and outer_right
         expected_answer = normalize(self.outer_left + self.inner + self.outer_right)
@@ -162,11 +179,10 @@ class Deletion(ClueType):
     answer: AnswerStr
 
     def __post_init__(self):
+        super().__post_init__()
+
         # Validate the indicator
         self.check_indicator_matches({'keep': self.keep, 'delete': self.delete, 'deletion': self.deletion})
-
-        # Validate the answer
-        self.check_answer()
 
         # Validate the deletion operation
         expected_answer = ''.join(self.keep) if isinstance(self.keep, list) else self.keep
@@ -243,11 +259,10 @@ class Hidden(ClueType):
     answer: AnswerStr
 
     def __post_init__(self):
+        super().__post_init__()
+
         # Validate that the indicator matches the clue and produces the hidden word
         self.check_indicator_matches({'left': self.left, 'hidden': self.hidden, 'right': self.right})
-
-        # Validate that the answer is in the correct format
-        self.check_answer()
 
         # Validate that the hidden word produces the answer
         self.check_normalized_equal(
@@ -301,11 +316,10 @@ class Homophone(ClueType):
     answer: AnswerStr
 
     def __post_init__(self):
+        super().__post_init__()
+
         # Validate that the indicator matches the clue and produces the sound-alike word
         self.check_indicator_matches({'sound_alike': self.sound_alike})
-
-        # Validate that the answer is in the correct format
-        self.check_answer()
 
         # Note: We can't programmatically verify that the sound_alike actually sounds like the answer.
         # This would require a pronunciation database or API, which is beyond the scope of this implementation.
@@ -339,11 +353,10 @@ class Reversal(ClueType):
     answer: AnswerStr
 
     def __post_init__(self):
+        super().__post_init__()
+
         # Validate that the indicator matches the clue and produces the fodder
         self.check_indicator_matches({'fodder': self.fodder})
-
-        # Validate that the answer is in the correct format
-        self.check_answer()
 
         # Validate that the answer is a reversal of the fodder
         self.check_normalized_equal(

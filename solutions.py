@@ -6,8 +6,29 @@ from clue_sources import *
 class SolutionType:
     """
     Base class for all solution types.
+
+    >>> @dataclass
+    ... class SimpleSolution(SolutionType):
+    ...     clue: ClueStr
+    ...     answer: AnswerStr
+    >>> SimpleSolution("Valid clue", "ANSWER")
+    SimpleSolution(clue='Valid clue', answer='ANSWER')
+    >>> SimpleSolution("Invalid <clue>", "ANSWER")
+    Traceback (most recent call last):
+    ...
+    ValueError: "Invalid <clue>" is not a valid clue: contains indicator delimiters < or >
+    >>> SimpleSolution("Valid clue", "invalid answer")
+    Traceback (most recent call last):
+    ...
+    ValueError: "invalid answer" must be in "answer" form: only uppercase, spaces and hyphens
     """
-    pass
+    clue: str
+    answer_pattern: str
+    answer: str
+
+    def __post_init__(self):
+        check_clue(self.clue)
+        check_answer(self.answer)
 
 @dataclass(frozen=True)
 class DoubleSolution(SolutionType):
@@ -122,11 +143,7 @@ class DoubleSolution(SolutionType):
     answer: str
 
     def __post_init__(self):
-        # Validate the answer pattern
-        check_answer_pattern(self.answer_pattern)
-
-        # Validate the answer
-        check_answer(self.answer)
+        super().__post_init__()
 
         # Check if the combined clues match the full clue
         joined_clues = clue_input(self.solution1.clue) + ' ' + clue_input(self.solution2.clue)

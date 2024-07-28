@@ -78,6 +78,12 @@ Composition types are used to construct more complex clues and solutions. They a
 - ✅ Combination
 - ❌ Ignored words
 
+## Configuration
+
+Crypilot behaviour can be configured by changing settings on the [cry_config()](./cry_config.py) object.
+
+- `indicator_delims`: Customize the delimiters used for indicators in clues. Default is `('<', '>')`.
+
 ## License
 
 This project is released under the [MIT License](LICENSE).

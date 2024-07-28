@@ -1,5 +1,6 @@
 import re
 from typing import Optional
+from cry_config import cry_config
 from cry_types import *
 
 def normalize(s: str) -> str:
@@ -86,6 +87,54 @@ def check_normalized(s: str) -> bool:
     """
     if not is_normalized(s):
         raise ValueError(f'"{s}" must be in normalized form')
+
+def is_clue(s: str) -> bool:
+    """
+    Checks if a string is a valid clue (doesn't contain indicator delimiters).
+
+    Args:
+        s (str): The string to check.
+
+    Returns:
+        bool: True if the string is a valid clue, False otherwise.
+
+    >>> is_clue("This is a valid clue")
+    True
+    >>> is_clue("This is <not> a valid clue")
+    False
+    """
+    start, end = cry_config().indicator_delims
+    return start not in s and end not in s
+
+def check_clue(s: ClueStr) -> None:
+    """
+    Checks if a string is a valid clue and raises an error if it's not.
+
+    Args:
+        s (ClueStr): The string to check.
+
+    Raises:
+        ValueError: If the string is not a valid clue.
+
+    >>> check_clue("This is a valid clue")
+    >>> check_clue("This is <not> a valid clue")
+    Traceback (most recent call last):
+    ...
+    ValueError: "This is <not> a valid clue" is not a valid clue: contains indicator delimiters < or >
+
+    >>> from cry_config import cry_config
+    >>> original_delims = cry_config().indicator_delims
+    >>> cry_config().indicator_delims = ('[', ']')
+    >>> check_clue("This is now a <valid> clue")
+    >>> check_clue("This is [not] a valid clue")
+    Traceback (most recent call last):
+    ...
+    ValueError: "This is [not] a valid clue" is not a valid clue: contains indicator delimiters [ or ]
+    >>> cry_config().indicator_delims = original_delims
+    """
+    if not is_clue(s):
+        start, end = cry_config().indicator_delims
+        raise ValueError(f'"{s}" is not a valid clue: contains indicator delimiters {start} or {end}')
 
 def is_answer(s: str) -> bool:
     """
@@ -319,11 +368,12 @@ def _check_indicator_matches(clue: ClueStr, indicator: IndicatorPatternStr, part
     Raises:
         ValueError: If the indicator is malformed (e.g., missing keys, incorrect value types).
     """
+    start, end = cry_config().indicator_delims
     replaced_indicator = indicator
     for key, value in parts.items():
         if value is None:
             continue
-        bracketed_key = f'<{key}>'
+        bracketed_key = f'{start}{key}{end}'
         if isinstance(value, str):
             if bracketed_key not in replaced_indicator:
                 raise ValueError(f"Bracketed key '{bracketed_key}' not found in indicator")
