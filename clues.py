@@ -8,7 +8,15 @@ class ClueType:
     Base class of all clue types. All clues have the form
     SomeClueType(clue: Text, ..., answer: Answer)
     """
-    pass
+    def check_indicator_matches(self, parts: dict[str, Optional[StringOrList]]):
+        check_indicator_matches(clue_output(self.clue), self.indicator, parts)
+    
+    def check_answer(self):
+        check_answer(self.answer)
+
+    def check_normalized_equal(self, a: str, b: str, error_message: str):
+        if not equals_normalized(a, b):
+            raise ValueError(error_message)
 
 @dataclass(frozen=True)
 class Anagram(ClueType):
@@ -36,14 +44,17 @@ class Anagram(ClueType):
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the fodder
-        check_indicator_matches(clue_output(self.clue), self.indicator, {'fodder': self.fodder}) 
+        self.check_indicator_matches({'fodder': self.fodder}) 
        
         # Validate that the answer is in the correct format
-        check_answer(self.answer)
+        self.check_answer()
         
         # Validate that the answer is an anagram of the fodder
-        if sorted(normalize(self.fodder)) != sorted(self.answer):
-            raise ValueError(f'Answer "{self.answer}" must be an anagram of "{self.fodder}"')
+        self.check_normalized_equal(
+            ''.join(sorted(normalize(self.fodder))),
+            ''.join(sorted(self.answer)),
+            f'Answer "{self.answer}" must be an anagram of "{self.fodder}"'
+        )
 
 @dataclass(frozen=True)
 class Container(ClueType):
@@ -84,19 +95,22 @@ class Container(ClueType):
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the container
-        check_indicator_matches(self.clue, self.indicator, {
+        self.check_indicator_matches({
             'outer_left': self.outer_left,
             'outer_right': self.outer_right,
             'inner': self.inner
         })
        
         # Validate that the answer is in the correct format
-        check_answer(self.answer)
+        self.check_answer()
         
         # Validate that the answer is formed by putting inner between outer_left and outer_right
         expected_answer = normalize(self.outer_left + self.inner + self.outer_right)
-        if normalize(self.answer) != expected_answer:
-            raise ValueError(f'Answer "{self.answer}" must be formed by putting "{self.inner}" between "{self.outer_left}" and "{self.outer_right}"')
+        self.check_normalized_equal(
+            self.answer,
+            expected_answer,
+            f'Answer "{self.answer}" must be formed by putting "{self.inner}" between "{self.outer_left}" and "{self.outer_right}"'
+        )
 
 from dataclasses import dataclass
 from typing import Union, Tuple, Optional
@@ -147,24 +161,27 @@ class Deletion(ClueType):
 
     def __post_init__(self):
         # Validate the indicator
-        parts = {'keep': self.keep, 'delete': self.delete}
-        if self.deletion:
-            parts['deletion'] = self.deletion
-        check_indicator_matches(self.clue, self.indicator, parts)
+        self.check_indicator_matches({'keep': self.keep, 'delete': self.delete, 'deletion': self.deletion})
 
         # Validate the answer
-        check_answer(self.answer)
+        self.check_answer()
 
         # Validate the deletion operation
         expected_answer = ''.join(self.keep) if isinstance(self.keep, list) else self.keep
-        if not equals_normalized(expected_answer, self.answer):
-            raise ValueError(f'The answer "{self.answer}" does not match the kept parts: "{self.keep}"')
+        self.check_normalized_equal(
+            expected_answer,
+            self.answer,
+            f'The answer "{self.answer}" does not match the kept parts: "{self.keep}"'
+        )
 
         # Validate the specified deletion (if provided)
         if self.deletion:
             actual_delete = ''.join(self.delete) if isinstance(self.delete, list) else self.delete
-            if not equals_normalized(actual_delete, self.deletion):
-                raise ValueError(f'The specified deletion "{self.deletion}" does not match the actual deleted part "{self.delete}"')
+            self.check_normalized_equal(
+                actual_delete,
+                self.deletion,
+                f'The specified deletion "{self.deletion}" does not match the actual deleted part "{self.delete}"'
+            )
 
 @dataclass(frozen=True)
 class Definition(ClueType):
@@ -225,14 +242,17 @@ class Hidden(ClueType):
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the hidden word
-        check_indicator_matches(clue_output(self.clue), self.indicator, {'left': self.left, 'hidden': self.hidden, 'right': self.right})
+        self.check_indicator_matches({'left': self.left, 'hidden': self.hidden, 'right': self.right})
 
         # Validate that the answer is in the correct format
-        check_answer(self.answer)
-        
+        self.check_answer()
+
         # Validate that the hidden word produces the answer
-        if normalize(self.hidden) != self.answer:
-            raise ValueError(f'Hidden word "{self.hidden}" must produce answer "{self.answer}"')
+        self.check_normalized_equal(
+            self.hidden,
+            self.answer,
+            f'Hidden word "{self.hidden}" must produce answer "{self.answer}"'
+        )
 
 @dataclass(frozen=True)
 class Reversal(ClueType):
@@ -263,16 +283,14 @@ class Reversal(ClueType):
 
     def __post_init__(self):
         # Validate that the indicator matches the clue and produces the fodder
-        check_indicator_matches(clue_output(self.clue), self.indicator, {'fodder': self.fodder})
-       
+        self.check_indicator_matches({'fodder': self.fodder}) 
+      
         # Validate that the answer is in the correct format
-        check_answer(self.answer)
-        
+        self.check_answer()
+       
         # Validate that the answer is a reversal of the fodder
-        if normalize(self.fodder)[::-1] != self.answer:
-            raise ValueError(f'Answer "{self.answer}" must be a reversal of "{self.fodder}"')
-        
-        # This is a simple check to ensure the answer is a valid word
-        # In a real system, you'd want to check against a dictionary
-        if len(self.answer) < 2:
-            raise ValueError(f'Answer "{self.answer}" must be a valid word')
+        self.check_normalized_equal(
+            normalize(self.fodder)[::-1],
+            self.answer,
+            f'Answer "{self.answer}" must be a reversal of "{self.fodder}"'
+        )
