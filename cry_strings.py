@@ -1,4 +1,5 @@
 import re
+import string
 from typing import Optional
 from cry_config import cry_config
 from cry_types import *
@@ -221,12 +222,18 @@ def is_answer_pattern(s: str) -> bool:
     True
     >>> is_answer_pattern("UH-OH")
     True
+    >>> is_answer_pattern("U|H|-|O|H")
+    True
     >>> is_answer_pattern('Hello world')
     False
     >>> is_answer_pattern('ABC!')
+    True
+    >>> is_answer_pattern('123')
+    False
+    >>> is_answer_pattern('A\\nB')
     False
     """
-    return re.match(r'^[A-Z_ \-]+$', s) is not None
+    return re.match(f'^[A-Z_ {re.escape(string.punctuation)}]+$', s) is not None
 
 def check_answer_pattern(s: AnswerPatternStr) -> None:
     """
@@ -283,15 +290,17 @@ def answer_matches_pattern(answer: AnswerStr, answer_pattern: AnswerPatternStr) 
     """
     check_answer(answer)
     check_answer_pattern(answer_pattern)
+    # Normalize the answer pattern by removing everything except
     # Normalize the answer by removing non-alphabetic characters
-    clean_answer = ''.join(c for c in answer if c.isalpha())
+    clean_answer_pattern = re.sub('[^A-Z_]+', '', answer_pattern)
+    clean_answer = re.sub('[^A-Z]+', '', answer)
 
     # Create a regex pattern from the answer_pattern
-    pattern = answer_pattern.replace('_', '.').replace(' ', r'\s*').replace('-', r'-?')
-    pattern = f'^{pattern}$'
+    answer_pattern_regex = clean_answer_pattern.replace('_', '.')
+    answer_pattern_regex = f'^{answer_pattern_regex}$'
 
     # Match the clean answer against the pattern
-    return bool(re.match(pattern, clean_answer, re.IGNORECASE))
+    return bool(re.match(answer_pattern_regex, clean_answer, re.IGNORECASE))
 
 def indicator_matches(clue: ClueStr, indicator: IndicatorPatternStr, parts: IndicatorParts) -> bool:
     """
